@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+//import "@openzeppelin/contracts/utils/Address.sol";
 import "./SimpleGovernance.sol";
 
 /**
@@ -50,6 +50,7 @@ contract SelfiePool is ReentrancyGuard {
     }
 
     function drainAllFunds(address receiver) external onlyGovernance {
+	console.log("Trying to drain all funds from: %s  to %s", address(this), receiver);
         uint256 amount = token.balanceOf(address(this));
         token.transfer(receiver, amount);
         

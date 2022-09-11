@@ -61,6 +61,9 @@ describe('Compromised challenge', function () {
 
     it('Exploit', async function () {        
         /** CODE YOUR EXPLOIT HERE */
+	let tokenId = await this.exchange.buyOne({value: 1});
+        this.nftToken.approve(this.exchange);
+        this.exchange.sellOne(tokenId);
     });
 
     after(async function () {

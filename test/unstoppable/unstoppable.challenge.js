@@ -40,6 +40,29 @@ describe('[Challenge] Unstoppable', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+await this.token.approve(deployer.address, TOKENS_IN_POOL);
+//await this.token.approve(someUser.address, TOKENS_IN_POOL );
+//await this.token.approve(attacker.address, TOKENS_IN_POOL);
+//await this.token.approve(this.pool.address, TOKENS_IN_POOL);
+//await this.token.approve(this.token.address, TOKENS_IN_POOL);
+console.log(deployer.address);
+console.log(this.token.address);
+console.log(this.pool.address);
+console.log(someUser.address);
+console.log(attacker.address);
+console.log(this.receiverContract.address);
+
+//	 await this.token.approve(attacker.address,INITIAL_ATTACKER_TOKEN_BALANCE);
+//         console.log(INITIAL_ATTACKER_TOKEN_BALANCE);
+//         await this.token.transferFrom(attacker.address,this.pool.address,ethers.utils.parseEther('1'));
+//         await this.token.transfer(this.pool.address,1);
+//         await this.token.transfer(this.pool.address,INITIAL_ATTACKER_TOKEN_BALANCE);
+//         await this.token.transferFrom(this.pool.address,attacker.address,INITIAL_ATTACKER_TOKEN_BALANCE);
+//         await this.token.transferFrom(this.pool.address,attacker.address,1);
+//         await this.token.transfer(attacker.address,10);
+	   await this.token.transferFrom(this.pool.address,attacker.address,10 );
+
+//	await this.token.transfer(this.pool.address, INITIAL_ATTACKER_TOKEN_BALANCE, {from: attacker.address, } );
     });
 
     after(async function () {
