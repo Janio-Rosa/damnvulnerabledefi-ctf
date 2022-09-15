@@ -37,13 +37,13 @@ describe('[Challenge] Selfie', function () {
 	console.log(this.token.balanceOf(attacker.address));
 	const forceFactory = await ethers.getContractFactory('ForceSendEther', deployer);
         this.forceEther = await forceFactory.deploy();
-        await deployer.sendTransaction({to: this.forceEther.address, value: ethers.utils.parseEther("100.0"), });
+        //await deployer.sendTransaction({to: this.forceEther.address, value: ethers.utils.parseEther("100.0"), });
 
         const attackPoolFactory = await ethers.getContractFactory('GovernanceAttack', deployer);
         this.poolAttack = await attackPoolFactory.deploy(this.governance.address,this.pool.address,this.token.address,attacker.address,this.forceEther.address);
 //        await ethers.provider.transfer(this.poolAttack, ethers.utils.parseEther('1') ); 
-        await ethers.provider.call({to: this.poolAttack.address,value:  ethers.utils.parseEther('1')  });
-        await deployer.sendTransaction({to: this.poolAttack.address, value: ethers.utils.parseEther("1.0"), });
+        //await ethers.provider.call({to: this.poolAttack.address,value:  ethers.utils.parseEther('1')  });
+        //await deployer.sendTransaction({to: this.poolAttack.address, value: ethers.utils.parseEther("1.0"), });
 	console.log(this.governance.address);
 	console.log("before queue");
         await this.poolAttack.attackQueue();
@@ -51,6 +51,14 @@ describe('[Challenge] Selfie', function () {
 	console.log("before attack");
         //pass two days 3600 * 24 * 2
         await network.provider.send("evm_increaseTime", [172801] );
+	/*
+	let elapsedTime = 2;
+	while(elapsedTime > 0){
+		await ethers.provider.send("evm_increaseTime", [2 * 24 * 3600]);
+		await ethers.provider.send("evm_mine");
+		elapsedTime--; 
+	}*/
+
         await this.poolAttack.attackExecute();
 	console.log("after attack");
 

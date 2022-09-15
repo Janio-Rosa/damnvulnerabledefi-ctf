@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "hardhat/console.sol";
 
 /**
  * @title FreeRiderBuyer
@@ -41,7 +42,9 @@ contract FreeRiderBuyer is ReentrancyGuard, IERC721Receiver {
         require(tx.origin == partner);
         require(_tokenId >= 0 && _tokenId <= 5);
         require(nft.ownerOf(_tokenId) == address(this));
-        
+
+//        console.log("one NFT was transfered: %s",received); 
+
         received++;
         if(received == 6) {            
             payable(partner).sendValue(JOB_PAYOUT);

