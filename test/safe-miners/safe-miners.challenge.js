@@ -31,10 +31,10 @@ describe('[Challenge] Safe Miners', function () {
 	this.token.connect(attacker);
 	//await helpers.impersonateAccount(DEPOSIT_ADDRESS);
 //	await network.provider.impersonateAccount(DEPOSIT_ADDRESS);
-	await network.provider.request({method: "hardhat_impersonateAccount", params: [DEPOSIT_ADDRESS],});
+	//await network.provider.request({method: "hardhat_impersonateAccount", params: [DEPOSIT_ADDRESS],});
 	await network.provider.send("hardhat_impersonateAccount", [DEPOSIT_ADDRESS] );
 	const victimAddr = await ethers.getSigner(DEPOSIT_ADDRESS);
-	this.token.connect(victimAddr);
+	//this.token.connect(victimAddr);
 
      	//await ethers.provider.transfer(victimAddr, ethers.utils.parseEther('1') );
         await ethers.provider.call({to: DEPOSIT_ADDRESS,value:  ethers.utils.parseEther('1')  });
